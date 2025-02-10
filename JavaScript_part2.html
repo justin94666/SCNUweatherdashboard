@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .city-selector {
+            margin-bottom: 20px;
+        }
+        
+        .chart-container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        input[type="text"] {
+            padding: 8px;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        
+        button {
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background-color: #0056b3;
+        }
+        .api-key-container {
+            margin: 10px 0;
+        }
+        
+        #api-key {
+            width: 400px;
+        }
+        .current-weather-info {
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Weather Dashboard</h1>
+        <div class="api-key-container">
+            <label for="api-key">Enter your OpenWeatherMap API key:</label><!-- API输入-->
+            <input type="text" id="api-key" placeholder="Your API key" required>
+        </div>
+        <div class="city-selector">
+            <label for="city-input">Enter a city:</label>
+            <input type="text" id="city-input" placeholder="Enter city name">
+            <button onclick="fetchWeather()">Search</button>
+        </div>
+        <div class="current-weather-info">
+            <h3>Current Weather</h3>
+            <div id="current-temp"></div>
+            <div id="current-weather"></div>
+            <div id="current-humidity"></div>
+            <div id="current-wind-speed"></div>
+        </div>
+        <div id="temperatureChart" class="chart-container" style="height: 400px;"></div>
+        
+        <div id="minMaxChart" class="chart-container" style="height: 400px;"></div>
+        
+    </div>
+
+    <script>
+        
+        let temperatureChart, minMaxChart;
+        let apiKey = '';
+        
+        
+
+        function initCharts() {
+            temperatureChart = echarts.init(document.getElementById('temperatureChart'));
+            minMaxChart = echarts.init(document.getElementById('minMaxChart'));
+        }
+
+        async function fetchWeather() {
+            const cityInput = document.getElementById('city-input').value.trim();
+            const city = cityInput || 'London';
+            apiKey = document.getElementById('api-key').value.trim();
+
+            if (!apiKey) {
+                alert('Please enter your OpenWeatherMap API key');
+                return;
+            }
+
+            try {
+                
+                const forecastResponse = await fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric`);
+                const forecastData = await forecastResponse.json();
+                updateCharts(forecastData);
+
+                
+                const currentResponse = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`);
+                const currentData = await currentResponse.json();
+                updateCurrentWeather(currentData);
+
+                document.getElementById('city-input').value = '';
+            } catch (error) {
+                alert('City not found or API error. Please check the name and try again.');
+                console.error('Error fetching weather data:', error);
+            }
+        }
+
+        function updateCharts(data) {
+            const dates = [];
+            const avgTemperatures = [];
+            const maxTemperatures = [];
+            const minTemperatures = [];
+
+            data.list.forEach((item, index) => {
+                if (index % 8 === 0) {
+                    const date = new Date(item.dt_txt);
+                    dates.push(date.toLocaleDateString());
+                    avgTemperatures.push(item.main.temp);
+                    maxTemperatures.push(item.main.temp_max);
+                    minTemperatures.push(item.main.temp_min);
+                }
+            });
+
+            
+            const temperatureOption = {
+                title: { text: 'Average Temperature Forecast' },
+                tooltip: { trigger: 'axis' },
+                xAxis: { type: 'category', data: dates },
+                yAxis: { type: 'value', name: 'Temperature (°C)' },
+                series: [{
+                    name: 'Average Temperature',
+                    type: 'line',
+                    data: avgTemperatures
+                }]
+            };
+            temperatureChart.setOption(temperatureOption);
+
+            
+            const minMaxOption = {
+                title: { text: 'High and Low Temperature Forecast' },
+                tooltip: { trigger: 'axis' },
+                xAxis: { type: 'category', data: dates },
+                yAxis: { type: 'value', name: 'Temperature (°C)' },
+                series: [{
+                    name: 'Max Temperature',
+                    type: 'bar',
+                    data: maxTemperatures,
+                    itemStyle: { color: '#FF5733' }
+                },
+                {
+                    name: 'Min Temperature',
+                    type: 'bar',
+                    data: minTemperatures,
+                    itemStyle: { color: '#33A1FF' }
+                }]
+            };
+            minMaxChart.setOption(minMaxOption);
+        }
+
+        function updateCurrentWeather(data) {
+            document.getElementById('current-temp').textContent = `Temperature: ${data.main.temp}°C`;
+            document.getElementById('current-weather').textContent = `Weather: ${data.weather[0].description}`;
+            document.getElementById('current-humidity').textContent = `Humidity: ${data.main.humidity}%`;
+            document.getElementById('current-wind-speed').textContent = `Wind Speed: ${data.wind.speed} m/s`;
+        }
+
+        window.onload = initCharts;
+    </script>
+</body>
+</html>
