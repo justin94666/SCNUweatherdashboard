@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+
+</head>
+<body>
+    <div class="container">
+        <h1>Weather Dashboard</h1>
+        <div class="api-key-container">
+            <label for="api-key">Enter your OpenWeatherMap API key:</label>
+            <input type="text" id="api-key" placeholder="Your API key" required>
+        </div>
+        <div class="city-selector">
+            <label for="city-input">Enter a city:</label>
+            <input type="text" id="city-input" placeholder="Enter city name">
+            <button onclick="fetchWeather()">Search</button>
+        </div>
+        <div class="current-weather-info">
+            <h3>Current Weather</h3>
+            <div id="current-temp"></div>
+            <div id="current-weather"></div>
+            <div id="current-humidity"></div>
+            <div id="current-wind-speed"></div>
+        </div>
+        <div id="temperatureChart" class="chart-container" style="height: 400px;"></div>
+        <div id="minMaxChart" class="chart-container" style="height: 400px;"></div>
+    </div>
+</body>
+</html>
